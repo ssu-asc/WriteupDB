@@ -54,32 +54,34 @@ def parse_writeup(filepath: Path) -> dict:
 
 
 def find_existing_page(notion: Client, database_id: str, ctf_name: str, challenge_name: str) -> str | None:
-    """CTF명+문제명으로 기존 Notion 페이지를 검색합니다. 있으면 page_id 반환."""
-    response = notion.databases.query(
-        database_id=database_id,
-        filter={
-            "and": [
-                {
-                    "property": "대회명",
-                    "rich_text": {"equals": ctf_name},
-                },
-                {
-                    "property": "문제명",
-                    "title": {"equals": challenge_name},
-                },
-            ]
-        },
+    """대회명+문제명으로 기존 Notion 페이지를 검색합니다. 있으면 page_id 반환."""
+    response = notion.search(
+        query=challenge_name,
+        filter={"value": "page", "property": "object"},
     )
-    results = response.get("results", [])
-    return results[0]["id"] if results else None
+    for page in response.get("results", []):
+        if page.get("parent", {}).get("database_id", "").replace("-", "") != database_id.replace("-", ""):
+            continue
+        props = page.get("properties", {})
+        # 문제명(Title) 확인
+        title_prop = props.get("문제명", {})
+        title_texts = title_prop.get("title", [])
+        title = title_texts[0]["plain_text"] if title_texts else ""
+        # 대회명(Select) 확인
+        ctf_prop = props.get("대회명", {})
+        ctf_select = ctf_prop.get("select")
+        ctf = ctf_select["name"] if ctf_select else ""
+        if title == challenge_name and ctf == ctf_name:
+            return page["id"]
+    return None
 
 
 def build_properties(metadata: dict, github_url: str) -> dict:
     """frontmatter 메타데이터를 Notion properties로 변환합니다."""
     properties = {
         "문제명": {"title": [{"text": {"content": metadata.get("challenge_name", "")}}]},
-        "대회명": {"rich_text": [{"text": {"content": metadata.get("ctf_name", "")}}]},
-        "분야": {"select": {"name": metadata.get("category", "misc").upper()}},
+        "대회명": {"select": {"name": metadata.get("ctf_name", "")}},
+        "분야": {"multi_select": [{"name": metadata.get("category", "misc").upper()}]},
         "난이도": {"select": {"name": metadata.get("difficulty", "medium")}},
         "작성자(학번_이름)": {"rich_text": [{"text": {"content": metadata.get("author", "")}}]},
     }
