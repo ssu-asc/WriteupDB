@@ -60,7 +60,7 @@ def find_existing_page(notion: Client, database_id: str, ctf_name: str, challeng
         filter={
             "and": [
                 {
-                    "property": "CTF명",
+                    "property": "대회명",
                     "rich_text": {"equals": ctf_name},
                 },
                 {
@@ -78,10 +78,10 @@ def build_properties(metadata: dict, github_url: str) -> dict:
     """frontmatter 메타데이터를 Notion properties로 변환합니다."""
     properties = {
         "문제명": {"title": [{"text": {"content": metadata.get("challenge_name", "")}}]},
-        "CTF명": {"rich_text": [{"text": {"content": metadata.get("ctf_name", "")}}]},
-        "카테고리": {"select": {"name": metadata.get("category", "misc").upper()}},
+        "대회명": {"rich_text": [{"text": {"content": metadata.get("ctf_name", "")}}]},
+        "분야": {"select": {"name": metadata.get("category", "misc").upper()}},
         "난이도": {"select": {"name": metadata.get("difficulty", "medium")}},
-        "작성자": {"rich_text": [{"text": {"content": metadata.get("author", "")}}]},
+        "작성자(학번_이름)": {"rich_text": [{"text": {"content": metadata.get("author", "")}}]},
     }
 
     # 날짜
@@ -89,19 +89,14 @@ def build_properties(metadata: dict, github_url: str) -> dict:
     if date:
         properties["날짜"] = {"date": {"start": str(date)}}
 
-    # 점수
-    points = metadata.get("points")
-    if points is not None:
-        properties["점수"] = {"number": points}
-
-    # 태그
+    # 취약점 태그
     tags = metadata.get("tags")
     if tags and isinstance(tags, list):
-        properties["태그"] = {"multi_select": [{"name": str(t)} for t in tags]}
+        properties["취약점 태그"] = {"multi_select": [{"name": str(t)} for t in tags]}
 
-    # GitHub 링크
+    # Git 링크
     if github_url:
-        properties["GitHub 링크"] = {"url": github_url}
+        properties["Git 링크"] = {"url": github_url}
 
     return properties
 
