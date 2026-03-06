@@ -1,0 +1,3 @@
+# 모든 writeup PR에 대해 관리자 자동 리뷰 지정
+# @org/admin-team 을 실제 관리자 팀/유저로 변경하세요
+* @ASC-admin
