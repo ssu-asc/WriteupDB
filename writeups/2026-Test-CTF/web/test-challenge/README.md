@@ -5,7 +5,6 @@ category: "web"
 difficulty: "easy"
 author: "admin"
 date: "2026-01-01"
-points: 100
 tags: [XSS, CSP]
 ---
 
