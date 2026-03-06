@@ -14,6 +14,7 @@ Environment:
 """
 
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -47,10 +48,160 @@ def build_github_url(filepath: Path) -> str:
     return f"{server}/{repo}/blob/main/{filepath}"
 
 
-def parse_writeup(filepath: Path) -> dict:
-    """writeup 파일의 frontmatter를 파싱합니다."""
+def parse_writeup(filepath: Path) -> tuple[dict, str]:
+    """writeup 파일의 frontmatter와 본문을 파싱합니다."""
     post = frontmatter.load(filepath)
-    return post.metadata
+    return post.metadata, post.content
+
+
+def rich_text(content: str) -> list[dict]:
+    """Notion rich_text 객체를 생성합니다."""
+    # Notion API는 rich_text content를 2000자로 제한
+    if len(content) > 2000:
+        content = content[:2000]
+    return [{"type": "text", "text": {"content": content}}]
+
+
+def markdown_to_notion_blocks(md: str) -> list[dict]:
+    """마크다운 텍스트를 Notion 블록 리스트로 변환합니다."""
+    blocks = []
+    lines = md.split("\n")
+    i = 0
+
+    while i < len(lines):
+        line = lines[i]
+
+        # 빈 줄 건너뛰기
+        if not line.strip():
+            i += 1
+            continue
+
+        # 코드 블록
+        if line.strip().startswith("```"):
+            lang = line.strip().removeprefix("```").strip()
+            code_lines = []
+            i += 1
+            while i < len(lines) and not lines[i].strip().startswith("```"):
+                code_lines.append(lines[i])
+                i += 1
+            i += 1  # 닫는 ``` 건너뛰기
+            code_content = "\n".join(code_lines)
+            if len(code_content) > 2000:
+                code_content = code_content[:2000]
+            blocks.append({
+                "object": "block",
+                "type": "code",
+                "code": {
+                    "rich_text": rich_text(code_content),
+                    "language": lang if lang else "plain text",
+                },
+            })
+            continue
+
+        # 제목
+        if line.startswith("### "):
+            blocks.append({
+                "object": "block",
+                "type": "heading_3",
+                "heading_3": {"rich_text": rich_text(line[4:].strip())},
+            })
+            i += 1
+            continue
+
+        if line.startswith("## "):
+            blocks.append({
+                "object": "block",
+                "type": "heading_2",
+                "heading_2": {"rich_text": rich_text(line[3:].strip())},
+            })
+            i += 1
+            continue
+
+        if line.startswith("# "):
+            blocks.append({
+                "object": "block",
+                "type": "heading_1",
+                "heading_1": {"rich_text": rich_text(line[2:].strip())},
+            })
+            i += 1
+            continue
+
+        # 인용문
+        if line.startswith("> "):
+            quote_lines = []
+            while i < len(lines) and lines[i].startswith("> "):
+                quote_lines.append(lines[i][2:])
+                i += 1
+            blocks.append({
+                "object": "block",
+                "type": "quote",
+                "quote": {"rich_text": rich_text("\n".join(quote_lines))},
+            })
+            continue
+
+        # 비순서 목록
+        if re.match(r"^[-*] ", line):
+            while i < len(lines) and re.match(r"^[-*] ", lines[i]):
+                blocks.append({
+                    "object": "block",
+                    "type": "bulleted_list_item",
+                    "bulleted_list_item": {"rich_text": rich_text(lines[i][2:].strip())},
+                })
+                i += 1
+            continue
+
+        # 순서 목록
+        if re.match(r"^\d+\. ", line):
+            while i < len(lines) and re.match(r"^\d+\. ", lines[i]):
+                text = re.sub(r"^\d+\. ", "", lines[i]).strip()
+                blocks.append({
+                    "object": "block",
+                    "type": "numbered_list_item",
+                    "numbered_list_item": {"rich_text": rich_text(text)},
+                })
+                i += 1
+            continue
+
+        # 이미지
+        img_match = re.match(r"!\[([^\]]*)\]\(([^)]+)\)", line.strip())
+        if img_match:
+            url = img_match.group(2)
+            if url.startswith("http"):
+                blocks.append({
+                    "object": "block",
+                    "type": "image",
+                    "image": {"type": "external", "external": {"url": url}},
+                })
+            i += 1
+            continue
+
+        # 구분선
+        if re.match(r"^(-{3,}|\*{3,}|_{3,})$", line.strip()):
+            blocks.append({"object": "block", "type": "divider", "divider": {}})
+            i += 1
+            continue
+
+        # 일반 텍스트 (연속된 줄을 하나의 paragraph로)
+        para_lines = []
+        while i < len(lines) and lines[i].strip() and not any([
+            lines[i].startswith("#"),
+            lines[i].startswith("> "),
+            lines[i].startswith("```"),
+            re.match(r"^[-*] ", lines[i]),
+            re.match(r"^\d+\. ", lines[i]),
+            re.match(r"^(-{3,}|\*{3,}|_{3,})$", lines[i].strip()),
+            re.match(r"!\[([^\]]*)\]\(([^)]+)\)", lines[i].strip()),
+        ]):
+            para_lines.append(lines[i])
+            i += 1
+        blocks.append({
+            "object": "block",
+            "type": "paragraph",
+            "paragraph": {"rich_text": rich_text("\n".join(para_lines))},
+        })
+
+    # Notion API는 한 번에 최대 100개 블록
+    return blocks[:100]
 
 
 def find_existing_page(notion: Client, database_id: str, ctf_name: str, challenge_name: str) -> str | None:
@@ -103,9 +254,16 @@ def build_properties(metadata: dict, github_url: str) -> dict:
     return properties
 
 
+def clear_page_content(notion: Client, page_id: str) -> None:
+    """기존 페이지의 블록을 모두 삭제합니다."""
+    children = notion.blocks.children.list(block_id=page_id)
+    for block in children.get("results", []):
+        notion.blocks.delete(block_id=block["id"])
+
+
 def sync_writeup(notion: Client, database_id: str, filepath: Path) -> None:
     """단일 writeup을 Notion DB에 동기화합니다."""
-    metadata = parse_writeup(filepath)
+    metadata, content = parse_writeup(filepath)
     ctf_name = metadata.get("ctf_name", "")
     challenge_name = metadata.get("challenge_name", "")
 
@@ -115,14 +273,22 @@ def sync_writeup(notion: Client, database_id: str, filepath: Path) -> None:
 
     github_url = build_github_url(filepath)
     properties = build_properties(metadata, github_url)
+    blocks = markdown_to_notion_blocks(content)
 
     existing_page_id = find_existing_page(notion, database_id, ctf_name, challenge_name)
 
     if existing_page_id:
         notion.pages.update(page_id=existing_page_id, properties=properties)
+        clear_page_content(notion, existing_page_id)
+        if blocks:
+            notion.blocks.children.append(block_id=existing_page_id, children=blocks)
         print(f"[UPDATE] {ctf_name} - {challenge_name}")
     else:
-        notion.pages.create(parent={"database_id": database_id}, properties=properties)
+        notion.pages.create(
+            parent={"database_id": database_id},
+            properties=properties,
+            children=blocks,
+        )
         print(f"[CREATE] {ctf_name} - {challenge_name}")
 
 
