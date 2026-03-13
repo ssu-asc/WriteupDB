@@ -62,7 +62,19 @@ def rich_text(content: str) -> list[dict]:
     return [{"type": "text", "text": {"content": content}}]
 
 
-def markdown_to_notion_blocks(md: str) -> list[dict]:
+def build_raw_image_url(relative_path: str, writeup_filepath: Path) -> str:
+    """상대 경로 이미지를 GitHub raw URL로 변환합니다."""
+    repo = os.environ.get("GITHUB_REPOSITORY", "")
+    if not repo:
+        return ""
+    image_path = (writeup_filepath.parent / relative_path).as_posix()
+    if "writeups/" in image_path:
+        idx = image_path.index("writeups/")
+        image_path = image_path[idx:]
+    return f"https://raw.githubusercontent.com/{repo}/main/{image_path}"
+
+
+def markdown_to_notion_blocks(md: str, writeup_filepath: Path | None = None) -> list[dict]:
     """마크다운 텍스트를 Notion 블록 리스트로 변환합니다."""
     blocks = []
     lines = md.split("\n")
@@ -166,6 +178,8 @@ def markdown_to_notion_blocks(md: str) -> list[dict]:
         img_match = re.match(r"!\[([^\]]*)\]\(([^)]+)\)", line.strip())
         if img_match:
             url = img_match.group(2)
+            if not url.startswith("http") and writeup_filepath:
+                url = build_raw_image_url(url, writeup_filepath)
             if url.startswith("http"):
                 blocks.append({
                     "object": "block",
@@ -273,7 +287,7 @@ def sync_writeup(notion: Client, database_id: str, filepath: Path) -> None:
 
     github_url = build_github_url(filepath)
     properties = build_properties(metadata, github_url)
-    blocks = markdown_to_notion_blocks(content)
+    blocks = markdown_to_notion_blocks(content, filepath)
 
     existing_page_id = find_existing_page(notion, database_id, ctf_name, challenge_name)
 

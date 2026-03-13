@@ -89,6 +89,7 @@ GitHub에서 PR을 생성합니다. PR 템플릿을 채워주세요.
 - `solve.py`, `exploit.py` 등 풀이 스크립트 첨부 가능
 - 스크린샷은 `images/` 디렉토리에 저장
 - writeup 본문에서 상대 경로로 참조: `![screenshot](images/step1.png)`
+- 상대 경로 이미지는 Notion 동기화 시 GitHub raw URL로 자동 변환되므로, 외부 URL을 직접 쓸 필요 없음
 
 ## 주의사항
 
