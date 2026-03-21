@@ -218,8 +218,8 @@ def markdown_to_notion_blocks(md: str, writeup_filepath: Path | None = None) -> 
     return blocks[:100]
 
 
-def find_existing_page(notion: Client, database_id: str, ctf_name: str, challenge_name: str) -> str | None:
-    """대회명+문제명으로 기존 Notion 페이지를 검색합니다. 있으면 page_id 반환."""
+def find_existing_page(notion: Client, database_id: str, ctf_name: str, challenge_name: str, author: str) -> str | None:
+    """대회명+문제명+작성자로 기존 Notion 페이지를 검색합니다. 있으면 page_id 반환."""
     response = notion.search(
         query=challenge_name,
         filter={"value": "page", "property": "object"},
@@ -236,7 +236,11 @@ def find_existing_page(notion: Client, database_id: str, ctf_name: str, challeng
         ctf_prop = props.get("대회명", {})
         ctf_select = ctf_prop.get("select")
         ctf = ctf_select["name"] if ctf_select else ""
-        if title == challenge_name and ctf == ctf_name:
+        # 작성자 확인
+        author_prop = props.get("작성자(학번_이름)", {})
+        author_texts = author_prop.get("rich_text", [])
+        page_author = author_texts[0]["plain_text"] if author_texts else ""
+        if title == challenge_name and ctf == ctf_name and page_author == author:
             return page["id"]
     return None
 
@@ -289,7 +293,8 @@ def sync_writeup(notion: Client, database_id: str, filepath: Path) -> None:
     properties = build_properties(metadata, github_url)
     blocks = markdown_to_notion_blocks(content, filepath)
 
-    existing_page_id = find_existing_page(notion, database_id, ctf_name, challenge_name)
+    author = metadata.get("author", "")
+    existing_page_id = find_existing_page(notion, database_id, ctf_name, challenge_name, author)
 
     if existing_page_id:
         notion.pages.update(page_id=existing_page_id, properties=properties)

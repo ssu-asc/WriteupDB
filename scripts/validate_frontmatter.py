@@ -58,6 +58,15 @@ def validate_file(filepath: Path) -> list[str]:
     except ValueError:
         pass  # writeups 디렉토리 외부 파일은 경로 검증 건너뜀
 
+    # 파일명과 author 필드 일치 검증
+    expected_author = filepath.stem  # 파일명에서 확장자 제거 (예: alice.md -> alice)
+    author = metadata.get("author")
+    if author and expected_author != author:
+        errors.append(
+            f"파일명 '{filepath.name}'과 author 필드 '{author}'가 불일치 "
+            f"(파일명을 '{author}.md'로 변경하거나 author를 '{expected_author}'로 수정하세요)"
+        )
+
     # tags 필드 타입 검사
     tags = metadata.get("tags")
     if tags is not None and not isinstance(tags, list):
@@ -74,13 +83,13 @@ def validate_file(filepath: Path) -> list[str]:
 def find_writeup_files(paths: list[str] | None = None) -> list[Path]:
     """검증할 writeup 파일 목록을 반환합니다."""
     if paths:
-        return [Path(p) for p in paths if Path(p).name == "README.md"]
+        return [Path(p) for p in paths if Path(p).suffix == ".md"]
 
     repo_root = Path(__file__).resolve().parent.parent
     writeups_dir = repo_root / "writeups"
     if not writeups_dir.exists():
         return []
-    return list(writeups_dir.rglob("README.md"))
+    return list(writeups_dir.rglob("*.md"))
 
 
 def main() -> int:

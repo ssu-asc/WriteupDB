@@ -11,10 +11,14 @@ writeups/
 └── {YYYY-CTF이름}/
     └── {카테고리}/
         └── {문제명}/
-            ├── README.md      # writeup 본문 (frontmatter 포함)
-            ├── solve.py       # 풀이 스크립트 (선택)
-            └── images/        # 스크린샷 (선택)
+            ├── {github_username}.md   # writeup 본문 (frontmatter 포함)
+            ├── solve.py               # 풀이 스크립트 (선택)
+            └── images/                # 스크린샷 (선택)
 ```
+
+> **같은 문제를 여러 멤버가 풀어도 각자 자신의 GitHub username으로 파일을 생성하므로 충돌 없이 구분됩니다.**
+>
+> 예: `writeups/2026-DiceCTF/web/baby-xss/alice.md`, `writeups/2026-DiceCTF/web/baby-xss/bob.md`
 
 ## 빠른 시작
 
@@ -32,10 +36,10 @@ cd WriteupDB
 # 디렉토리 생성
 mkdir -p writeups/2026-Example-CTF/web/example-challenge
 
-# 템플릿 복사
-cp templates/writeup-template.md writeups/2026-Example-CTF/web/example-challenge/README.md
+# 템플릿 복사 (파일명을 본인 GitHub username으로 지정)
+cp templates/writeup-template.md writeups/2026-Example-CTF/web/example-challenge/<your-github-username>.md
 
-# writeup 작성
+# writeup 작성 (frontmatter의 author 필드도 동일한 GitHub username으로 기입)
 ```
 
 ### 3. 로컬 검증
@@ -78,11 +82,11 @@ git push origin writeup/2026-Example-CTF/example-challenge
 
 | 속성명 | 타입 | 비고 |
 |--------|------|------|
-| 문제명 | Title | PK 역할 |
+| 문제명 | Title | |
 | CTF명 | Rich Text | |
 | 카테고리 | Select | WEB/PWN/REV/CRYPTO/MISC |
 | 난이도 | Select | easy/medium/hard/insane |
-| 작성자 | Rich Text | |
+| 작성자(학번_이름) | Rich Text | GitHub username (문제명+작성자 조합으로 구분) |
 | 날짜 | Date | |
 | 점수 | Number | |
 | 태그 | Multi-select | 사용 기술/툴 |
