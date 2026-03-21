@@ -237,7 +237,7 @@ def find_existing_page(notion: Client, database_id: str, ctf_name: str, challeng
         ctf_select = ctf_prop.get("select")
         ctf = ctf_select["name"] if ctf_select else ""
         # 작성자 확인
-        author_prop = props.get("작성자(학번_이름)", {})
+        author_prop = props.get("닉네임", {})
         author_texts = author_prop.get("rich_text", [])
         page_author = author_texts[0]["plain_text"] if author_texts else ""
         if title == challenge_name and ctf == ctf_name and page_author == author:
@@ -252,7 +252,7 @@ def build_properties(metadata: dict, github_url: str) -> dict:
         "대회명": {"select": {"name": metadata.get("ctf_name", "")}},
         "분야": {"multi_select": [{"name": metadata.get("category", "misc").upper()}]},
         "난이도": {"select": {"name": metadata.get("difficulty", "medium")}},
-        "작성자(학번_이름)": {"rich_text": [{"text": {"content": metadata.get("author", "")}}]},
+        "닉네임": {"rich_text": [{"text": {"content": metadata.get("author", "")}}]},
     }
 
     # 날짜

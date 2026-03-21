@@ -86,7 +86,7 @@ git push origin writeup/2026-Example-CTF/example-challenge
 | CTF명 | Rich Text | |
 | 카테고리 | Select | WEB/PWN/REV/CRYPTO/MISC |
 | 난이도 | Select | easy/medium/hard/insane |
-| 작성자(학번_이름) | Rich Text | GitHub username (문제명+작성자 조합으로 구분) |
+| 작성자 | Rich Text | GitHub username (문제명+작성자 조합으로 구분) |
 | 날짜 | Date | |
 | 점수 | Number | |
 | 태그 | Multi-select | 사용 기술/툴 |
