@@ -279,6 +279,46 @@ def clear_page_content(notion: Client, page_id: str) -> None:
         notion.blocks.delete(block_id=block["id"])
 
 
+def find_member_name_by_github(notion: Client, members_db_id: str, github_username: str) -> str | None:
+    """멤버 DB에서 GitHub username으로 이름을 검색합니다."""
+    response = notion.databases.query(
+        database_id=members_db_id,
+        filter={"property": "GitHub username", "rich_text": {"equals": github_username}},
+        page_size=1,
+    )
+    results = response.get("results", [])
+    if not results:
+        return None
+    title_prop = results[0].get("properties", {}).get("이름", {})
+    title_texts = title_prop.get("title", [])
+    return title_texts[0]["plain_text"] if title_texts else None
+
+
+def find_tracking_page(notion: Client, tracking_db_id: str, name: str) -> str | None:
+    """제출 현황 DB에서 이름으로 페이지를 검색합니다."""
+    response = notion.databases.query(
+        database_id=tracking_db_id,
+        filter={"property": "이름", "title": {"equals": name}},
+        page_size=1,
+    )
+    results = response.get("results", [])
+    return results[0]["id"] if results else None
+
+
+def update_tracking_checkbox(notion: Client, tracking_db_id: str, name: str, week: int) -> None:
+    """제출 현황 DB에서 멤버의 W{week} 체크박스를 True로 업데이트합니다."""
+    prop_name = f"WW{week}"
+    page_id = find_tracking_page(notion, tracking_db_id, name)
+    if page_id:
+        notion.pages.update(
+            page_id=page_id,
+            properties={prop_name: {"checkbox": True}},
+        )
+        print(f"[TRACK] {name} → {prop_name} ✅")
+    else:
+        print(f"[TRACK] {name} → 제출 현황 DB에서 찾을 수 없음")
+
+
 def sync_writeup(notion: Client, database_id: str, filepath: Path) -> None:
     """단일 writeup을 Notion DB에 동기화합니다."""
     metadata, content = parse_writeup(filepath)
@@ -309,6 +349,18 @@ def sync_writeup(notion: Client, database_id: str, filepath: Path) -> None:
             children=blocks,
         )
         print(f"[CREATE] {ctf_name} - {challenge_name}")
+
+    # 제출 현황 DB 체크박스 업데이트
+    week_number = os.environ.get("WEEK_NUMBER", "")
+    tracking_db_id = os.environ.get("NOTION_TRACKING_DB_ID", "")
+    members_db_id = os.environ.get("NOTION_MEMBERS_DB_ID", "")
+    if week_number and tracking_db_id and members_db_id and author:
+        week = int(week_number)
+        member_name = find_member_name_by_github(notion, members_db_id, author)
+        if member_name:
+            update_tracking_checkbox(notion, tracking_db_id, member_name, week)
+        else:
+            print(f"[TRACK] GitHub '{author}' → 멤버 DB에서 찾을 수 없음")
 
 
 def main() -> int:
