@@ -1,6 +1,6 @@
 ---
 ctf_name: "RITSEC CTF 2026"
-challenge_name: "Regular Dude"
+challenge_name: "regular dude"
 category: "web"
 difficulty: "easy"
 author: "penguink-hub"
@@ -57,4 +57,7 @@ model.save('exploit.h5')
 ```
 
 ## 플래그
-RS{R3gul4r_Dud3_w1th_4n_1rr3gul4r_m0d37}
+
+```
+RS{REDACTED}
+```
