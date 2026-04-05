@@ -49,10 +49,14 @@ if ( v5 <= 8 )
       }
 '''
 
+
+![screenshot](images/2.png)
 ingredients[0] -> 0x404080
 ingredients[1] -> 0x4040a0
 ...
 pi 의 주소가 0x404180 이므로, ingredients[0]와의 차이는 0x100, 이다. 각 배열의 크기는 0x20 이므로 index 8 위치에 pi 가 존재한다.
+![screenshot](images/1.png)
+![screenshot](images/3.png)
 
 (T)aste test 분기에서 전역변수 pi를 읽어 .data의 0x402200의 값과 비교한다.
 
@@ -80,7 +84,7 @@ p.interactive()
 ```
 
 ## 플래그
-
+![screenshot](images/0.png)
 ```
 RS{REDACTED}
 ```
