@@ -5,7 +5,7 @@ ctf_name: "2026 GMDSOFT 채용연계형 CTF"
 challenge_name: "MTaquitous"
 category: "pwn"
 difficulty: "hard"
-author: "김태은"
+author: "xxxodms88"
 date: "2026-04-07"
 solved: true
 tags:
