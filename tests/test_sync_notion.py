@@ -101,5 +101,22 @@ class QueryDatabaseTests(unittest.TestCase):
             sync_notion.query_database(notion, "db-123", page_size=1)
 
 
+class CodeLanguageTests(unittest.TestCase):
+    def test_known_language_is_preserved(self) -> None:
+        self.assertEqual(sync_notion.normalize_code_language("python"), "python")
+
+    def test_text_alias_maps_to_plain_text(self) -> None:
+        self.assertEqual(sync_notion.normalize_code_language("text"), "plain text")
+
+    def test_unknown_language_falls_back_to_plain_text(self) -> None:
+        self.assertEqual(sync_notion.normalize_code_language("foobar"), "plain text")
+
+    def test_markdown_parser_uses_normalized_language(self) -> None:
+        blocks = sync_notion.markdown_to_notion_blocks("```text\nhello\n```")
+
+        self.assertEqual(blocks[0]["type"], "code")
+        self.assertEqual(blocks[0]["code"]["language"], "plain text")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -23,6 +23,34 @@ import frontmatter
 from notion_client import Client
 
 _DATA_SOURCE_IDS: dict[str, str] = {}
+NOTION_CODE_LANGUAGES = {
+    "abap", "abc", "agda", "arduino", "ascii art", "assembly", "bash", "basic",
+    "bnf", "c", "c#", "c++", "clojure", "coffeescript", "coq", "css", "dart",
+    "dhall", "diff", "docker", "ebnf", "elixir", "elm", "erlang", "f#",
+    "flow", "fortran", "gherkin", "glsl", "go", "graphql", "groovy", "haskell",
+    "hcl", "html", "idris", "java", "javascript", "json", "julia", "kotlin",
+    "latex", "less", "lisp", "livescript", "llvm ir", "lua", "makefile",
+    "markdown", "markup", "matlab", "mathematica", "mermaid", "nix",
+    "notion formula", "objective-c", "ocaml", "pascal", "perl", "php",
+    "plain text", "powershell", "prolog", "protobuf", "purescript", "python",
+    "r", "racket", "reason", "ruby", "rust", "sass", "scala", "scheme",
+    "scss", "shell", "smalltalk", "solidity", "sql", "swift", "toml",
+    "typescript", "vb.net", "verilog", "vhdl", "visual basic", "webassembly",
+    "xml", "yaml", "java/c/c++/c#",
+}
+CODE_LANGUAGE_ALIASES = {
+    "plaintext": "plain text",
+    "text": "plain text",
+    "txt": "plain text",
+    "console": "shell",
+    "shell script": "shell",
+    "sh": "shell",
+    "zsh": "shell",
+    "py": "python",
+    "js": "javascript",
+    "ts": "typescript",
+    "yml": "yaml",
+}
 
 
 def get_notion_client() -> Client:
@@ -63,6 +91,12 @@ def rich_text(content: str) -> list[dict]:
     if len(content) > 2000:
         content = content[:2000]
     return [{"type": "text", "text": {"content": content}}]
+
+
+def normalize_code_language(lang: str) -> str:
+    """Notion이 허용하는 코드 블록 언어로 정규화합니다."""
+    normalized = CODE_LANGUAGE_ALIASES.get(lang.strip().lower(), lang.strip().lower())
+    return normalized if normalized in NOTION_CODE_LANGUAGES else "plain text"
 
 
 def build_raw_image_url(relative_path: str, writeup_filepath: Path) -> str:
@@ -108,7 +142,7 @@ def markdown_to_notion_blocks(md: str, writeup_filepath: Path | None = None) -> 
                 "type": "code",
                 "code": {
                     "rich_text": rich_text(code_content),
-                    "language": lang if lang else "plain text",
+                    "language": normalize_code_language(lang),
                 },
             })
             continue
