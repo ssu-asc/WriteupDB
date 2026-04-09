@@ -81,7 +81,7 @@ def build_github_url(filepath: Path) -> str:
 
 def parse_writeup(filepath: Path) -> tuple[dict, str]:
     """writeup 파일의 frontmatter와 본문을 파싱합니다."""
-    post = frontmatter.load(filepath)
+    post = frontmatter.loads(filepath.read_text(encoding="utf-8-sig"))
     return post.metadata, post.content
 
 
