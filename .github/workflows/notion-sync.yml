@@ -85,7 +85,7 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_SERVER_URL: ${{ github.server_url }}
           WEEK_NUMBER: ${{ steps.week.outputs.week }}
-          NOTION_TIMEOUT_MS: "15000"
+          NOTION_TIMEOUT_MS: "60000"
           PYTHONUNBUFFERED: "1"
         run: |
           FILES="${{ steps.changed.outputs.files }}"
