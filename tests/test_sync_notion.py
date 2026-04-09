@@ -1,4 +1,5 @@
 import importlib.util
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -133,6 +134,28 @@ class FrontmatterParsingTests(unittest.TestCase):
         self.assertEqual(metadata["ctf_name"], "Test CTF")
         self.assertEqual(metadata["challenge_name"], "Bom Challenge")
         self.assertEqual(content.strip(), "body")
+
+
+class ClientConfigTests(unittest.TestCase):
+    def test_notion_client_uses_env_timeout(self) -> None:
+        old_api_key = os.environ.get("NOTION_API_KEY")
+        old_timeout = os.environ.get("NOTION_TIMEOUT_MS")
+        try:
+            os.environ["NOTION_API_KEY"] = "test-token"
+            os.environ["NOTION_TIMEOUT_MS"] = "12345"
+
+            client = sync_notion.get_notion_client()
+
+            self.assertEqual(client.options.timeout_ms, 12345)
+        finally:
+            if old_api_key is None:
+                os.environ.pop("NOTION_API_KEY", None)
+            else:
+                os.environ["NOTION_API_KEY"] = old_api_key
+            if old_timeout is None:
+                os.environ.pop("NOTION_TIMEOUT_MS", None)
+            else:
+                os.environ["NOTION_TIMEOUT_MS"] = old_timeout
 
 
 if __name__ == "__main__":

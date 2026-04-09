@@ -58,7 +58,8 @@ def get_notion_client() -> Client:
     if not api_key:
         print("Error: NOTION_API_KEY 환경변수가 설정되지 않았습니다.")
         sys.exit(1)
-    return Client(auth=api_key)
+    timeout_ms = int(os.environ.get("NOTION_TIMEOUT_MS", "15000"))
+    return Client(auth=api_key, timeout_ms=timeout_ms)
 
 
 def get_database_id() -> str:
@@ -347,13 +348,16 @@ def build_properties(metadata: dict, github_url: str) -> dict:
 
 def clear_page_content(notion: Client, page_id: str) -> None:
     """기존 페이지의 블록을 모두 삭제합니다."""
+    print(f"[NOTION] 기존 블록 조회: {page_id}")
     children = notion.blocks.children.list(block_id=page_id)
     for block in children.get("results", []):
+        print(f"[NOTION] 블록 삭제: {block['id']}")
         notion.blocks.delete(block_id=block["id"])
 
 
 def find_member_name_by_github(notion: Client, members_db_id: str, github_username: str) -> str | None:
     """멤버 DB에서 GitHub username으로 이름을 검색합니다."""
+    print(f"[NOTION] 멤버 조회: github={github_username}")
     response = query_database(
         notion,
         members_db_id,
@@ -370,6 +374,7 @@ def find_member_name_by_github(notion: Client, members_db_id: str, github_userna
 
 def find_tracking_page(notion: Client, tracking_db_id: str, name: str) -> str | None:
     """제출 현황 DB에서 이름으로 페이지를 검색합니다."""
+    print(f"[NOTION] 제출 현황 조회: name={name}")
     response = query_database(
         notion,
         tracking_db_id,
@@ -385,6 +390,7 @@ def update_tracking_checkbox(notion: Client, tracking_db_id: str, name: str, wee
     prop_name = f"WW{week}"
     page_id = find_tracking_page(notion, tracking_db_id, name)
     if page_id:
+        print(f"[NOTION] 제출 현황 업데이트: page={page_id} prop={prop_name}")
         notion.pages.update(
             page_id=page_id,
             properties={prop_name: {"checkbox": True}},
@@ -396,6 +402,7 @@ def update_tracking_checkbox(notion: Client, tracking_db_id: str, name: str, wee
 
 def sync_writeup(notion: Client, database_id: str, filepath: Path) -> None:
     """단일 writeup을 Notion DB에 동기화합니다."""
+    print(f"[SYNC] 시작: {filepath}")
     metadata, content = parse_writeup(filepath)
     ctf_name = metadata.get("ctf_name", "")
     challenge_name = metadata.get("challenge_name", "")
@@ -409,15 +416,19 @@ def sync_writeup(notion: Client, database_id: str, filepath: Path) -> None:
     blocks = markdown_to_notion_blocks(content, filepath)
 
     author = metadata.get("author", "")
+    print(f"[NOTION] 기존 페이지 검색: ctf={ctf_name} challenge={challenge_name} author={author}")
     existing_page_id = find_existing_page(notion, database_id, ctf_name, challenge_name, author)
 
     if existing_page_id:
+        print(f"[NOTION] 페이지 업데이트: {existing_page_id}")
         notion.pages.update(page_id=existing_page_id, properties=properties)
         clear_page_content(notion, existing_page_id)
         if blocks:
+            print(f"[NOTION] 블록 추가: {existing_page_id} count={len(blocks)}")
             notion.blocks.children.append(block_id=existing_page_id, children=blocks)
         print(f"[UPDATE] {ctf_name} - {challenge_name}")
     else:
+        print(f"[NOTION] 페이지 생성: title={challenge_name} blocks={len(blocks)}")
         notion.pages.create(
             parent={"database_id": database_id},
             properties=properties,
