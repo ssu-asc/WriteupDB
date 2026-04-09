@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       files:
-        description: "Sync할 writeup 경로들. 공백 또는 줄바꿈으로 구분"
+        description: "Sync할 writeup 경로들. 줄바꿈으로 구분"
         required: false
         type: string
       week_number:
@@ -82,4 +82,10 @@ jobs:
           GITHUB_SERVER_URL: ${{ github.server_url }}
           WEEK_NUMBER: ${{ steps.week.outputs.week }}
         run: |
-          echo "${{ steps.changed.outputs.files }}" | xargs python scripts/sync_notion.py
+          FILES="${{ steps.changed.outputs.files }}"
+          while IFS= read -r file; do
+            if [ -z "$file" ]; then
+              continue
+            fi
+            python scripts/sync_notion.py "$file"
+          done <<< "$FILES"
