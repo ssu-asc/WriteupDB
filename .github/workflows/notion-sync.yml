@@ -85,11 +85,14 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_SERVER_URL: ${{ github.server_url }}
           WEEK_NUMBER: ${{ steps.week.outputs.week }}
+          NOTION_TIMEOUT_MS: "15000"
+          PYTHONUNBUFFERED: "1"
         run: |
           FILES="${{ steps.changed.outputs.files }}"
           while IFS= read -r file; do
             if [ -z "$file" ]; then
               continue
             fi
-            python scripts/sync_notion.py "$file"
+            echo "[SYNC] dispatch $file"
+            timeout -k 5s 60s python -u scripts/sync_notion.py "$file"
           done <<< "$FILES"
