@@ -17,9 +17,12 @@ import os
 import re
 import sys
 from pathlib import Path
+from typing import Any
 
 import frontmatter
 from notion_client import Client
+
+_DATA_SOURCE_IDS: dict[str, str] = {}
 
 
 def get_notion_client() -> Client:
@@ -245,6 +248,42 @@ def find_existing_page(notion: Client, database_id: str, ctf_name: str, challeng
     return None
 
 
+def resolve_query_target_id(notion: Client, database_id: str) -> str:
+    """Notion DB query에 사용할 식별자를 반환합니다."""
+    if hasattr(notion.databases, "query"):
+        return database_id
+
+    cached_id = _DATA_SOURCE_IDS.get(database_id)
+    if cached_id:
+        return cached_id
+
+    database = notion.databases.retrieve(database_id=database_id)
+    data_sources = database.get("data_sources") or []
+    if not data_sources and database.get("initial_data_source"):
+        data_sources = [database["initial_data_source"]]
+
+    for data_source in data_sources:
+        data_source_id = data_source.get("id") if isinstance(data_source, dict) else None
+        if data_source_id:
+            _DATA_SOURCE_IDS[database_id] = data_source_id
+            return data_source_id
+
+    raise RuntimeError(
+        f"Database {database_id} 에 query 가능한 data source가 없습니다. "
+        "Notion API 버전과 데이터베이스 접근 권한을 확인하세요."
+    )
+
+
+def query_database(notion: Client, database_id: str, **kwargs: Any) -> dict[str, Any]:
+    """구/신 Notion SDK 모두에서 동작하도록 데이터베이스를 조회합니다."""
+    if hasattr(notion.databases, "query"):
+        return notion.databases.query(database_id=database_id, **kwargs)
+    return notion.data_sources.query(
+        data_source_id=resolve_query_target_id(notion, database_id),
+        **kwargs,
+    )
+
+
 def build_properties(metadata: dict, github_url: str) -> dict:
     """frontmatter 메타데이터를 Notion properties로 변환합니다."""
     properties = {
@@ -281,8 +320,9 @@ def clear_page_content(notion: Client, page_id: str) -> None:
 
 def find_member_name_by_github(notion: Client, members_db_id: str, github_username: str) -> str | None:
     """멤버 DB에서 GitHub username으로 이름을 검색합니다."""
-    response = notion.databases.query(
-        database_id=members_db_id,
+    response = query_database(
+        notion,
+        members_db_id,
         filter={"property": "GitHub username", "rich_text": {"equals": github_username}},
         page_size=1,
     )
@@ -296,8 +336,9 @@ def find_member_name_by_github(notion: Client, members_db_id: str, github_userna
 
 def find_tracking_page(notion: Client, tracking_db_id: str, name: str) -> str | None:
     """제출 현황 DB에서 이름으로 페이지를 검색합니다."""
-    response = notion.databases.query(
-        database_id=tracking_db_id,
+    response = query_database(
+        notion,
+        tracking_db_id,
         filter={"property": "이름", "title": {"equals": name}},
         page_size=1,
     )
