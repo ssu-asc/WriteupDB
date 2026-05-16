@@ -23,6 +23,7 @@ IDA로 Decompile한 뒤, 분석을 용이하게 하기 위해 새로운 C 프로
 해당 파일은 `polaroid.c`이다.
 
 `polaroid.c`를 Linux 환경에서 다시 컴파일한 실행 파일은 `polaroid.exec`이고, 이를 실행하여 생성한 결과 파일은 `flag.png`이다.
+`flag.png`에는 실제 플래그가 포함되므로 제출 파일에는 포함하지 않았다.
 
 ### 분석
 
