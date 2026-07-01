@@ -3,7 +3,7 @@ ctf_name: "MntcrlCTF"
 challenge_name: "waypoint"
 category: "misc"
 difficulty: "easy"
-author: "b0ru"
+author: "inhwan689"
 date: "2026-06-29"
 points: 20
 tags: [data-visualization, csv, power-query]
