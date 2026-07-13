@@ -3,7 +3,7 @@ ctf_name: "LYKNCTF"
 challenge_name: "LYKN Corp"
 category: "web"           # web / pwn / rev / crypto / misc
 difficulty: "easy"      # easy / medium / hard / insane
-author: "canhieu"
+author: "inhwan689"
 date: "2026-07-06"
 points: 100
 tags: [credential-reuse]
