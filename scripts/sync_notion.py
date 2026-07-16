@@ -312,8 +312,8 @@ def build_properties(metadata: dict, github_url: str) -> dict:
     properties = {
         "문제명": {"title": [{"text": {"content": metadata.get("challenge_name", "")}}]},
         "대회명": {"select": {"name": metadata.get("ctf_name", "")}},
-        "분야": {"multi_select": [{"name": metadata.get("category", "misc").upper()}]},
-        "난이도": {"select": {"name": metadata.get("difficulty", "medium")}},
+        "분야": {"multi_select": [{"name": (metadata.get("category") or "misc").upper()}]},
+        "난이도": {"select": {"name": metadata.get("difficulty") or "medium"}},
         "닉네임": {"rich_text": [{"text": {"content": metadata.get("author", "")}}]},
     }
 
