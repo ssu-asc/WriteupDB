@@ -3,7 +3,7 @@ ctf_name: "Dreamhack"
 challenge_name: "web-ssrf"
 category: "web"           # web / pwn / rev / crypto / misc
 difficulty: "easy"      # easy / medium / hard / insane
-author: "Dreamhack"
+author: "inhwan689"
 date: "2020-06-15"
 points: 0
 tags: [ssrf, filter-bypass, ffuf]
