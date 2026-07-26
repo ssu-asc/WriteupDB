@@ -103,7 +103,7 @@ print(r.text)
 ## 플래그
 
 ```
-DH{c1126c8d35d8deaa39c5dd6fc8855ed0}
+DH{}
 ```
 
 ## 배운 점
