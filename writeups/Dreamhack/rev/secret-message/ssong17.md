@@ -5,7 +5,7 @@ category: "rev"           # web / pwn / rev / crypto / misc
 difficulty: "easy"      # easy / medium / hard / insane
 author: "ssong17"
 date: "2026-04-11"
-points: -
+points:
 tags: [태그1, 태그2]
 ---
 
