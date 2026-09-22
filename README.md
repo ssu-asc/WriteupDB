@@ -2,7 +2,7 @@
 
 ASC 보안 동아리 CTF Writeup 관리 시스템
 
-멤버가 Git PR로 writeup을 제출하면, 관리자 리뷰 후 merge 시 자동으로 Notion DB에 동기화됩니다.
+멤버가 Git PR로 writeup을 제출하면, 관리자 리뷰 후 merge 시 저장소에 반영됩니다.
 
 ## 마감
 
@@ -69,35 +69,12 @@ git push origin writeup/2026-Example-CTF/web/example-challenge
 ## 파이프라인
 
 ```
-[멤버] -> fork/branch -> [PR 제출] -> 리뷰 -> [merge] -> [GitHub Actions] -> [Notion DB]
-                              |                              |
-                        CI: frontmatter 검증         변경된 .md 파싱 -> 동기화
-                                                     + 제출 현황 체크박스 업데이트
+[멤버] -> fork/branch -> [PR 제출] -> 리뷰 -> [merge] -> [main 반영]
+                              |
+                        CI: frontmatter 검증
 ```
 
 ## 설정 (관리자)
-
-### GitHub Secrets
-
-| Secret | 설명 |
-|--------|------|
-| `NOTION_API_KEY` | Notion Internal Integration Token |
-| `NOTION_DATABASE_ID` | Writeup Notion DB ID |
-| `NOTION_TRACKING_DB_ID` | 제출 현황 DB ID |
-| `NOTION_MEMBERS_DB_ID` | 부원 명단 DB ID |
-
-### Notion DB 스키마
-
-| 속성명 | 타입 | 비고 |
-|--------|------|------|
-| 문제명 | Title | |
-| 대회명 | Select | CTF 대회명 |
-| 분야 | Multi-select | WEB/PWN/REV/CRYPTO/MISC |
-| 난이도 | Select | easy/medium/hard/insane |
-| 닉네임 | Rich Text | GitHub username |
-| 날짜 | Date | |
-| 취약점 태그 | Multi-select | 사용 기술/취약점 |
-| Git 링크 | URL | writeup 원문 링크 |
 
 ### 브랜치 보호 규칙 (권장)
 
